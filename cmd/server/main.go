@@ -25,22 +25,27 @@ func main() {
 	}
 	db := client.Database("inventory_db")
 
+	//  Создаем Transaction Manager
+	tm := repository.NewTransactionManager(client)
+
 	// 2. Инициализация слоев
 	repo := repository.NewMongoProductRepository(db)
-	svc := service.NewProductService(repo)
+	svc := service.NewProductService(repo, tm)
 	h := handler.NewProductHandler(svc)
 
 	// 3. Настройка роутера
 	r := chi.NewRouter()
 
-    r.Use(middleware.RequestID)
-    r.Use(middleware.RealIP)
-    r.Use(middleware.Logger)   
-    r.Use(middleware.Recoverer)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
 	r.Post("/products", h.CreateProduct)
 	r.Get("/products/{sku}", h.GetBySKU)
 
+	r.Post("/products/transfer", h.TestTransferStock) 
+	
 	log.Println("Server starting on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)

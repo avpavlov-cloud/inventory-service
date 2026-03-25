@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -42,4 +43,42 @@ func (h *ProductHandler) GetBySKU(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(product)
+}
+
+func (h *ProductHandler) TestTransaction(w http.ResponseWriter, r *http.Request) {
+	// Для простоты возьмем параметры из URL: /test-tx?from=A&to=B&amount=5
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+
+	err := h.service.TransferStock(r.Context(), from, to, 5)
+	if err != nil {
+		http.Error(w, "Transaction failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte("Transaction successful"))
+}
+
+// TestTransferStock — хендлер для проверки транзакции
+func (h *ProductHandler) TestTransferStock(w http.ResponseWriter, r *http.Request) {
+	// Читаем параметры из URL: ?from=apple&to=samsung&amount=5
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+	amountStr := r.URL.Query().Get("amount")
+
+	// В реальном проекте здесь была бы валидация чисел
+	amount := 1
+	if amountStr != "" {
+		fmt.Sscanf(amountStr, "%d", &amount)
+	}
+
+	// Вызываем сервис, который мы обернули в транзакцию
+	err := h.service.TransferStock(r.Context(), from, to, amount)
+	if err != nil {
+		// Если транзакция откатилась, мы увидим ошибку здесь
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Write([]byte("Transaction success: stock transferred"))
 }

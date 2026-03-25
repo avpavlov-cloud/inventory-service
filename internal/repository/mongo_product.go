@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/avpavlov-cloud/inventory-service/internal/domain"
@@ -40,19 +41,23 @@ func (r *MongoProductRepository) GetBySKU(ctx context.Context, sku string) (*dom
 	return &product, nil
 }
 
-// Добавьте этот метод к остальным методам структуры MongoProductRepository
-func (r *MongoProductRepository) UpdateQuantity(ctx context.Context, id string, amount int) error {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
-
-	filter := bson.M{"_id": objectID}
+func (r *MongoProductRepository) UpdateQuantity(ctx context.Context, sku string, amount int) error {
+	// Ищем по строке SKU, а не по ObjectID
+	filter := bson.M{"sku": sku}
+	
 	update := bson.M{
 		"$inc": bson.M{"quantity": amount},
 		"$set": bson.M{"updated_at": time.Now()},
 	}
 
-	_, err = r.collection.UpdateOne(ctx, filter, update)
-	return err
+	result, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("product with sku %s not found", sku)
+	}
+	return nil
 }
+
