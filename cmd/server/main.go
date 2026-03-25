@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/avpavlov-cloud/inventory-service/internal/handler"
 	"github.com/avpavlov-cloud/inventory-service/internal/repository"
@@ -14,6 +16,9 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
 		mongoURI = "mongodb://localhost:27017" // дефолт для локального запуска
@@ -29,7 +34,7 @@ func main() {
 	tm := repository.NewTransactionManager(client)
 
 	// 2. Инициализация слоев
-	repo := repository.NewMongoProductRepository(db)
+	repo, err := repository.NewMongoProductRepository(ctx, db)
 	svc := service.NewProductService(repo, tm)
 	h := handler.NewProductHandler(svc)
 

@@ -17,11 +17,27 @@ type MongoProductRepository struct {
 	collection *mongo.Collection
 }
 
-// NewMongoProductRepository — конструктор репозитория
-func NewMongoProductRepository(db *mongo.Database) *MongoProductRepository {
-	return &MongoProductRepository{
-		collection: db.Collection("products"),
+func NewMongoProductRepository(ctx context.Context, db *mongo.Database) (*MongoProductRepository, error) {
+	col := db.Collection("products")
+
+	// 1. Уникальный индекс на SKU (защита от дублей)
+	_, err := col.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "sku", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create sku index: %w", err)
 	}
+
+	// 2. Индекс на Price (ускорение фильтрации и сортировки)
+	_, err = col.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys: bson.D{{Key: "price", Value: 1}},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create price index: %w", err)
+	}
+
+	return &MongoProductRepository{collection: col}, nil
 }
 
 func (r *MongoProductRepository) Create(ctx context.Context, p *domain.Product) error {

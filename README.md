@@ -47,3 +47,10 @@ docker exec -it mongodb_inventory mongosh inventory_db --eval "db.products.find(
  ```bash
   curl "http://localhost:8080/products?limit=1&offset=1"
   ```
+
+
+Просмотреть индексы
+```bash
+ docker exec -it mongodb_inventory mongosh inventory_db
+ inventory_db> db.products.getIndexes()
+ ```
