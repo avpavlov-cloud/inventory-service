@@ -34,19 +34,18 @@ func main() {
 	h := handler.NewProductHandler(svc)
 
 	// 3. Настройка роутера
-	r := chi.NewRouter()
+	r := chi.NewRouter() 
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	r.Get("/products/transfer", h.TestTransferStock)
 	r.Post("/products", h.CreateProduct)
 	r.Get("/products/{sku}", h.GetBySKU)
 
-	r.Post("/products/transfer", h.TestTransferStock) 
-	
-	log.Println("Server starting on :8080")
+	log.Println("!!! VERSION 2 !!!")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/avpavlov-cloud/inventory-service/internal/domain"
@@ -42,9 +43,10 @@ func (r *MongoProductRepository) GetBySKU(ctx context.Context, sku string) (*dom
 }
 
 func (r *MongoProductRepository) UpdateQuantity(ctx context.Context, sku string, amount int) error {
-	// Ищем по строке SKU, а не по ObjectID
+	// Логируем начало операции
+	slog.Info("DB UpdateQuantity start", "sku", sku, "amount", amount)
+
 	filter := bson.M{"sku": sku}
-	
 	update := bson.M{
 		"$inc": bson.M{"quantity": amount},
 		"$set": bson.M{"updated_at": time.Now()},
@@ -52,12 +54,20 @@ func (r *MongoProductRepository) UpdateQuantity(ctx context.Context, sku string,
 
 	result, err := r.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
+		slog.Error("DB UpdateQuantity error", "error", err, "sku", sku)
 		return err
 	}
 
+	// Логируем результат поиска
+	slog.Info("DB UpdateQuantity result",
+		"matched", result.MatchedCount,
+		"modified", result.ModifiedCount,
+		"sku", sku,
+	)
+
 	if result.MatchedCount == 0 {
-		return fmt.Errorf("product with sku %s not found", sku)
+		return fmt.Errorf("product %s not found", sku)
 	}
+
 	return nil
 }
-

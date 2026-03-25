@@ -32,3 +32,8 @@ curl -X POST http://localhost:8080/products \
 db.products.find({sku: "iphone"})
 db.products.find({sku: "samsung"})
 ```
+
+Получение всех товаров
+```bash
+docker exec -it mongodb_inventory mongosh inventory_db --eval "db.products.find()"
+```
