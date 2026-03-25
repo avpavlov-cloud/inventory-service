@@ -20,6 +20,17 @@ func NewProductHandler(s service.ProductService) *ProductHandler {
 	return &ProductHandler{service: s}
 }
 
+// CreateProduct godoc
+// @Summary      Создать новый товар
+// @Description  Добавляет новый товар в базу данных склада
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        product  body      domain.Product  true  "Данные товара"
+// @Success      201      {object}  domain.Product
+// @Failure      400      {string}  string "invalid request body"
+// @Failure      500      {string}  string "internal server error"
+// @Router       /products [post]
 func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	var p domain.Product
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
@@ -36,6 +47,15 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p)
 }
 
+// GetBySKU godoc
+// @Summary      Получить товар по SKU
+// @Description  Возвращает полную информацию о товаре по его уникальному артикулу
+// @Tags         products
+// @Produce      json
+// @Param        sku   path      string  true  "Артикул товара (SKU)"
+// @Success      200   {object}  domain.Product
+// @Failure      404   {string}  string "product not found"
+// @Router       /products/{sku} [get]
 func (h *ProductHandler) GetBySKU(w http.ResponseWriter, r *http.Request) {
 	sku := chi.URLParam(r, "sku")
 	product, err := h.service.GetStockInfo(r.Context(), sku)
@@ -45,6 +65,7 @@ func (h *ProductHandler) GetBySKU(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(product)
 }
+
 
 func (h *ProductHandler) TestTransaction(w http.ResponseWriter, r *http.Request) {
 	// Для простоты возьмем параметры из URL: /test-tx?from=A&to=B&amount=5
@@ -59,7 +80,17 @@ func (h *ProductHandler) TestTransaction(w http.ResponseWriter, r *http.Request)
 	w.Write([]byte("Transaction successful"))
 }
 
-// TestTransferStock — хендлер для проверки транзакции
+// TestTransferStock godoc
+// @Summary      Перевод остатков (Транзакция)
+// @Description  Переводит количество товара с одного SKU на другой внутри атомарной транзакции
+// @Tags         inventory
+// @Produce      json
+// @Param        from    query     string  true  "SKU отправителя"
+// @Param        to      query     string  true  "SKU получателя"
+// @Param        amount  query     int     false "Количество (по умолчанию 1)"
+// @Success      200     {string}  string "Transaction success"
+// @Failure      500     {object}  map[string]string "error description"
+// @Router       /products/transfer [get]
 func (h *ProductHandler) TestTransferStock(w http.ResponseWriter, r *http.Request) {
 	// Читаем параметры из URL: ?from=apple&to=samsung&amount=5
 	from := r.URL.Query().Get("from")
@@ -84,6 +115,17 @@ func (h *ProductHandler) TestTransferStock(w http.ResponseWriter, r *http.Reques
 	w.Write([]byte("Transaction success: stock transferred"))
 }
 
+// GetProducts godoc
+// @Summary      Список товаров с пагинацией
+// @Description  Возвращает список товаров с фильтрацией по цене и поддержкой страниц
+// @Tags         products
+// @Produce      json
+// @Param        limit     query     int    false  "Лимит (по умолчанию 10)"
+// @Param        offset    query     int    false  "Сдвиг (по умолчанию 0)"
+// @Param        minPrice  query     number  false  "Минимальная цена"
+// @Success      200       {array}   domain.Product
+// @Failure      500       {string}  string "internal server error"
+// @Router       /products [get]
 func (h *ProductHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	// Читаем параметры и конвертируем их (в реальном проекте лучше через вспомогательную функцию)
 	query := r.URL.Query()
@@ -105,6 +147,14 @@ func (h *ProductHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(products)
 }
 
+// GetAnalytics godoc
+// @Summary      Аналитика склада
+// @Description  Возвращает агрегированную статистику: общее количество, стоимость и среднюю цену
+// @Tags         analytics
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {string}  string "internal server error"
+// @Router       /products/analytics [get]
 func (h *ProductHandler) GetAnalytics(w http.ResponseWriter, r *http.Request) {
 	stats, err := h.service.GetAnalytics(r.Context())
 	if err != nil {

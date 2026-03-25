@@ -7,12 +7,14 @@ import (
 	"os"
 	"time"
 
+	_ "github.com/avpavlov-cloud/inventory-service/docs"
 	"github.com/avpavlov-cloud/inventory-service/internal/handler"
 	"github.com/avpavlov-cloud/inventory-service/internal/repository"
 	"github.com/avpavlov-cloud/inventory-service/internal/service"
 	"github.com/avpavlov-cloud/inventory-service/pkg/mongodb"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -36,8 +38,8 @@ func main() {
 	// 2. Инициализация слоев
 	repo, err := repository.NewMongoProductRepository(ctx, db)
 	if err != nil {
-    log.Fatalf("CRITICAL: Repo failed to start: %v", err) 
-}
+		log.Fatalf("CRITICAL: Repo failed to start: %v", err)
+	}
 	svc := service.NewProductService(repo, tm)
 	h := handler.NewProductHandler(svc)
 
@@ -61,6 +63,10 @@ func main() {
 		// Параметризованный путь (всегда в конце группы)
 		r.Get("/{sku}", h.GetBySKU) // путь: GET /products/apple-15
 	})
+
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+	))
 
 	log.Println("!!! Server VERSION 3 !!!")
 	log.Println("!!! SERVER STARTED !!!", "port", "8080")
