@@ -1,0 +1,19 @@
+FROM golang:1.22-alpine
+
+# Устанавливаем git, так как air скачивается через него
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Устанавливаем Air для авторелоада
+RUN go install github.com/air-verse/air@v1.52.3
+
+# Сначала копируем зависимости (для кэширования слоев Docker)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Копируем остальной код
+COPY . .
+
+# Air по умолчанию ищет файл .air.toml в текущей директории
+CMD ["air"]

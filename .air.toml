@@ -1,0 +1,23 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Команда сборки (путь до твоего main.go)
+  cmd = "go build -o ./tmp/main ./cmd/server/main.go"
+  # Какой бинарник запускать после успешной сборки
+  bin = "./tmp/main"
+  # Какие расширения файлов отслеживать
+  include_ext = ["go", "yaml", "toml"]
+  # Какие папки игнорировать (чтобы не зациклить сборку)
+  exclude_dir = ["tmp", "vendor"]
+  # Задержка в мс после сохранения файла (чтобы не частить)
+  delay = 1000
+
+[log]
+  time = true
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"

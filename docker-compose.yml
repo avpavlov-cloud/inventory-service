@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Наша база данных
   mongodb:
     image: mongo:latest
     container_name: mongodb_inventory
@@ -10,17 +9,21 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # Наше Go приложение
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev # Указываем на файл для разработки
     container_name: inventory_app
     ports:
       - "8080:8080"
     environment:
-      # Важно: в Docker-сети обращаемся к базе по имени сервиса (mongodb)
       - MONGO_URI=mongodb://mongodb:27017
+    volumes:
+      - .:/app # КРИТИЧНО: связывает твой код на диске с контейнером
     depends_on:
       - mongodb
+    tty: true
+    stdin_open: true
 
 volumes:
   mongo_data:

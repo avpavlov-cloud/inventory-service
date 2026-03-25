@@ -10,6 +10,7 @@ import (
 	"github.com/avpavlov-cloud/inventory-service/internal/service"
 	"github.com/avpavlov-cloud/inventory-service/pkg/mongodb"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -31,6 +32,12 @@ func main() {
 
 	// 3. Настройка роутера
 	r := chi.NewRouter()
+
+    r.Use(middleware.RequestID)
+    r.Use(middleware.RealIP)
+    r.Use(middleware.Logger)   
+    r.Use(middleware.Recoverer)
+
 	r.Post("/products", h.CreateProduct)
 	r.Get("/products/{sku}", h.GetBySKU)
 
