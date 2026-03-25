@@ -39,3 +39,20 @@ func (r *MongoProductRepository) GetBySKU(ctx context.Context, sku string) (*dom
 	}
 	return &product, nil
 }
+
+// Добавьте этот метод к остальным методам структуры MongoProductRepository
+func (r *MongoProductRepository) UpdateQuantity(ctx context.Context, id string, amount int) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$inc": bson.M{"quantity": amount},
+		"$set": bson.M{"updated_at": time.Now()},
+	}
+
+	_, err = r.collection.UpdateOne(ctx, filter, update)
+	return err
+}

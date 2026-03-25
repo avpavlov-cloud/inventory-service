@@ -2,7 +2,10 @@ module github.com/avpavlov-cloud/inventory-service
 
 go 1.26.1
 
-require go.mongodb.org/mongo-driver v1.17.9
+require (
+	github.com/go-chi/chi/v5 v5.2.5
+	go.mongodb.org/mongo-driver v1.17.9
+)
 
 require (
 	github.com/golang/snappy v0.0.4 // indirect
