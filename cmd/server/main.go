@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/avpavlov-cloud/inventory-service/internal/handler"
 	"github.com/avpavlov-cloud/inventory-service/internal/repository"
@@ -12,8 +13,12 @@ import (
 )
 
 func main() {
-	// 1. Подключение к Mongo
-	client, err := mongodb.NewClient("mongodb://localhost:27017")
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		mongoURI = "mongodb://localhost:27017" // дефолт для локального запуска
+	}
+
+	client, err := mongodb.NewClient(mongoURI)
 	if err != nil {
 		log.Fatal(err)
 	}

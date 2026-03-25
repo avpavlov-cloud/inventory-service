@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  # Наша база данных
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_inventory
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # Наше Go приложение
+  app:
+    build: .
+    container_name: inventory_app
+    ports:
+      - "8080:8080"
+    environment:
+      # Важно: в Docker-сети обращаемся к базе по имени сервиса (mongodb)
+      - MONGO_URI=mongodb://mongodb:27017
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo_data:
