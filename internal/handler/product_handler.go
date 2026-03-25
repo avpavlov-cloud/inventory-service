@@ -104,3 +104,13 @@ func (h *ProductHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(products)
 }
+
+func (h *ProductHandler) GetAnalytics(w http.ResponseWriter, r *http.Request) {
+	stats, err := h.service.GetAnalytics(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(stats)
+}
+

@@ -18,6 +18,7 @@ type MongoProductRepository struct {
 }
 
 func NewMongoProductRepository(ctx context.Context, db *mongo.Database) (*MongoProductRepository, error) {
+	slog.Info("Main: Calling NewRepo now...")
 	col := db.Collection("products")
 
 	// 1. Уникальный индекс на SKU (защита от дублей)
@@ -111,4 +112,56 @@ func (r *MongoProductRepository) GetList(ctx context.Context, minPrice float64, 
 	}
 
 	return products, nil
+}
+
+func (r *MongoProductRepository) GetWarehouseAnalytics(ctx context.Context) (map[string]interface{}, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: nil},
+			{Key: "total_items", Value: bson.D{{Key: "$sum", Value: "$quantity"}}},
+			{Key: "total_value", Value: bson.D{{Key: "$sum", Value: bson.D{
+				{Key: "$multiply", Value: bson.A{"$price", "$quantity"}},
+			}}}},
+			{Key: "avg_price", Value: bson.D{{Key: "$avg", Value: "$price"}}},
+			{Key: "max_price", Value: bson.D{{Key: "$max", Value: "$price"}}},
+		}}},
+		{{Key: "$project", Value: bson.D{
+			{Key: "_id", Value: 0},
+			{Key: "total_count", Value: "$total_items"},
+			{Key: "inventory_value", Value: "$total_value"},
+			{Key: "average_price", Value: "$avg_price"},
+			{Key: "most_expensive", Value: "$max_price"},
+		}}},
+	}
+
+	slog.Info("Main: Repo initialized", "pointer", r) // ДОЛЖНО БЫТЬ НЕ NIL
+
+	// 1. Выполняем запрос
+	cursor, err := r.collection.Aggregate(ctx, pipeline)
+
+	// 2. КРИТИЧЕСКИ ВАЖНО: Если ошибка, выходим СРАЗУ.
+	// Если err != nil, то cursor БУДЕТ nil, и обращение к нему вызовет панику.
+	if err != nil {
+		return nil, fmt.Errorf("aggregate failed: %w", err)
+	}
+
+	// 3. Теперь, когда мы уверены, что cursor не nil, вешаем закрытие
+	defer cursor.Close(ctx)
+
+	var results []map[string]interface{}
+	// 4. Декодируем
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, fmt.Errorf("decode failed: %w", err)
+	}
+
+	// 5. Обработка пустого результата (если товаров 0)
+	if len(results) == 0 {
+		return map[string]interface{}{
+			"total_count":     0,
+			"inventory_value": 0,
+			"status":          "empty",
+		}, nil
+	}
+
+	return results[0], nil
 }

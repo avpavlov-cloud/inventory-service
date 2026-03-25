@@ -35,6 +35,9 @@ func main() {
 
 	// 2. Инициализация слоев
 	repo, err := repository.NewMongoProductRepository(ctx, db)
+	if err != nil {
+    log.Fatalf("CRITICAL: Repo failed to start: %v", err) 
+}
 	svc := service.NewProductService(repo, tm)
 	h := handler.NewProductHandler(svc)
 
@@ -50,6 +53,7 @@ func main() {
 		// Конкретные пути внутри /products/
 		r.Get("/transfer", h.TestTransferStock) // путь: GET /products/transfer
 
+		r.Get("/analytics", h.GetAnalytics)
 		// Операции со списком и создание
 		r.Get("/", h.GetProducts)    // путь: GET /products (ВАЖНО: тут просто "/")
 		r.Post("/", h.CreateProduct) // путь: POST /products
@@ -59,6 +63,7 @@ func main() {
 	})
 
 	log.Println("!!! Server VERSION 3 !!!")
+	log.Println("!!! SERVER STARTED !!!", "port", "8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}

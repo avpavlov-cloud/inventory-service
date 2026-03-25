@@ -112,3 +112,14 @@ func (s *ProductUseCase) GetList(ctx context.Context, minPrice float64, limit, o
 
 	return products, nil
 }
+
+func (s *ProductUseCase) GetAnalytics(ctx context.Context) (map[string]interface{}, error) {
+	// Репозиторий ТЕПЕРЬ возвращает (map[string]interface{}, error)
+	stats, err := s.repo.GetWarehouseAnalytics(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("service.GetAnalytics: %w", err)
+	}
+
+	// Больше не нужно брать results[0], так как stats — это уже и есть та самая карта
+	return stats, nil
+}

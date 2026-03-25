@@ -11,4 +11,5 @@ type ProductService interface {
 	GetStockInfo(ctx context.Context, sku string) (*domain.Product, error)
 	TransferStock(ctx context.Context, fromSKU, toSKU string, amount int) error
 	GetList(ctx context.Context, minPrice float64, limit, offset int64) ([]domain.Product, error)
+	GetAnalytics(ctx context.Context) (map[string]interface{}, error)
 }
