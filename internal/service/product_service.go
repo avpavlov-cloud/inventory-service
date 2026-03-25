@@ -91,3 +91,24 @@ func (s *ProductUseCase) TransferStock(ctx context.Context, fromSKU, toSKU strin
 	})
 }
 
+func (s *ProductUseCase) GetList(ctx context.Context, minPrice float64, limit, offset int64) ([]domain.Product, error) {
+	// Промышленный стандарт: защищаем сервер от слишком больших запросов
+	if limit <= 0 {
+		limit = 10 // Значение по умолчанию
+	}
+	if limit > 100 {
+		limit = 100 // Ограничиваем максимум (защита от DDOS/перегрузки памяти)
+	}
+
+	if offset < 0 {
+		offset = 0
+	}
+
+	// Вызываем репозиторий
+	products, err := s.repo.GetList(ctx, minPrice, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("service.GetList: %w", err)
+	}
+
+	return products, nil
+}

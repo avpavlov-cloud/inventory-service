@@ -37,3 +37,13 @@ db.products.find({sku: "samsung"})
 ```bash
 docker exec -it mongodb_inventory mongosh inventory_db --eval "db.products.find()"
 ```
+
+Просматривать логи 
+```bash
+ docker compose logs -f app
+ ```
+
+ Получнеие всех товаров
+ ```bash
+  curl "http://localhost:8080/products?limit=1&offset=1"
+  ```

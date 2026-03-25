@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MongoProductRepository struct {
@@ -70,4 +71,28 @@ func (r *MongoProductRepository) UpdateQuantity(ctx context.Context, sku string,
 	}
 
 	return nil
+}
+
+func (r *MongoProductRepository) GetList(ctx context.Context, minPrice float64, limit, offset int64) ([]domain.Product, error) {
+	// 1. Создаем фильтр (например, товары дороже определенной цены)
+	filter := bson.M{"price": bson.M{"$gte": minPrice}}
+
+	// 2. Настраиваем опции пагинации
+	findOptions := options.Find()
+	findOptions.SetLimit(limit)
+	findOptions.SetSkip(offset)
+	findOptions.SetSort(bson.D{{Key: "price", Value: 1}}) // Сортировка по цене (возрастание)
+
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var products []domain.Product
+	if err := cursor.All(ctx, &products); err != nil {
+		return nil, err
+	}
+
+	return products, nil
 }

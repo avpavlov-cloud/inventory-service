@@ -34,18 +34,26 @@ func main() {
 	h := handler.NewProductHandler(svc)
 
 	// 3. Настройка роутера
-	r := chi.NewRouter() 
+	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Get("/products/transfer", h.TestTransferStock)
-	r.Post("/products", h.CreateProduct)
-	r.Get("/products/{sku}", h.GetBySKU)
+	r.Route("/products", func(r chi.Router) {
+		// Конкретные пути внутри /products/
+		r.Get("/transfer", h.TestTransferStock) // путь: GET /products/transfer
 
-	log.Println("!!! VERSION 2 !!!")
+		// Операции со списком и создание
+		r.Get("/", h.GetProducts)    // путь: GET /products (ВАЖНО: тут просто "/")
+		r.Post("/", h.CreateProduct) // путь: POST /products
+
+		// Параметризованный путь (всегда в конце группы)
+		r.Get("/{sku}", h.GetBySKU) // путь: GET /products/apple-15
+	})
+
+	log.Println("!!! Server VERSION 3 !!!")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}

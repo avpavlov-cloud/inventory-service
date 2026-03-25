@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
@@ -81,4 +82,25 @@ func (h *ProductHandler) TestTransferStock(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Write([]byte("Transaction success: stock transferred"))
+}
+
+func (h *ProductHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
+	// Читаем параметры и конвертируем их (в реальном проекте лучше через вспомогательную функцию)
+	query := r.URL.Query()
+
+	limit, _ := strconv.ParseInt(query.Get("limit"), 10, 64)
+	if limit == 0 {
+		limit = 10
+	} // Значение по умолчанию
+
+	offset, _ := strconv.ParseInt(query.Get("offset"), 10, 64)
+	minPrice, _ := strconv.ParseFloat(query.Get("minPrice"), 64)
+
+	products, err := h.service.GetList(r.Context(), minPrice, limit, offset)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	json.NewEncoder(w).Encode(products)
 }
